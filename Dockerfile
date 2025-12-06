@@ -9,7 +9,7 @@ RUN apk add --no-cache \
     && echo "Contenedor básico listo" > /etc/motd
 
 # Script para monitoreo
-COPY monitor.sh /usr/local/bin/monitor.sh
+COPY scripts/monitor.sh /usr/local/bin/monitor.sh
 RUN chmod +x /usr/local/bin/monitor.sh
 
 # Puerto para comunicación
