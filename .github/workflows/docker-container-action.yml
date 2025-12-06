@@ -1,0 +1,52 @@
+name: Docker Container Action
+
+on:
+  push:
+    branches: [ main ]
+  workflow_dispatch:  # Permite ejecución manual
+
+jobs:
+  build-and-run:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout código
+      uses: actions/checkout@v4
+      
+    - name: Construir imagen Docker
+      run: |
+        docker build -t so-cicd-app:latest .
+        docker images
+      
+    - name: Ejecutar contenedor en segundo plano
+      run: |
+        docker run -d --name myapp -p 8080:8080 so-cicd-app:latest
+        sleep 5  # Esperar que el contenedor inicie
+        
+    - name: Verificar contenedor
+      run: |
+        docker ps
+        docker logs myapp
+        
+    - name: Comunicación con contenedor
+      run: |
+        echo "=== Prueba de comunicación ==="
+        # Usando curl dentro del contenedor
+        docker exec myapp curl -s http://localhost:8080/health || echo "Curl falló, probando otro método..."
+        
+        # Comunicación desde el host
+        curl -s http://localhost:8080/ || echo "No se pudo conectar al puerto 8080"
+        
+    - name: Monitorear recursos
+      run: |
+        echo "=== MONITOREO DE RECURSOS ==="
+        docker stats myapp --no-stream --format "table {{.Name}}\t{{.CPUPerc}}\t{{.MemUsage}}\t{{.NetIO}}"
+        
+        echo "=== DETALLES DEL CONTENEDOR ==="
+        docker inspect myapp | jq -r '.[0].State'
+        
+    - name: Limpiar
+      if: always()
+      run: |
+        docker stop myapp || true
+        docker rm myapp || true
